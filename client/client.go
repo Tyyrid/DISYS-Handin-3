@@ -88,7 +88,6 @@ func (c *Client) listenForMessages() {
 			log.Fatalf("There was some error: %v", err)
 		}
 
-
 		if msg.LamportTimestamp > c.LamportTimestamp {
 			c.LamportTimestamp = msg.LamportTimestamp + 1
 		} else {

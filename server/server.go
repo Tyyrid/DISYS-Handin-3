@@ -77,12 +77,18 @@ func (s *Server) SendMessage(ctx context.Context, msg *proto.ClientPublishMessag
 	//update LamportTime. compare Servers' time and the time for the msg we received
 	if msg.LamportTimestamp > s.LamportTimestamp {
 		s.LamportTimestamp = msg.LamportTimestamp + 1
-	} else {
+	/*} else if msg.LamportTimestamp == s.LamportTimestamp {
+
+
+		//Server har ikke noget ID?
+		//vi skal bruge den med mindre ID, fordi vi vælger at sige at den kom først ..?
+
+
+
+	*/} else {
 		s.LamportTimestamp += 1
 	}
 	log.Printf("Received a message from participant %d at Lamport time %d\n", msg.ClientId, s.LamportTimestamp)
-
-	//log.Printf("This is the Server's updated timestamp: %d", s.LamportTimestamp)
 
 	if msg.Message == "quit" {
 		for i, client := range s.clients {
