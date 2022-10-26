@@ -14,9 +14,9 @@ import (
 )
 
 type Client struct {
-	id         int
-	LamportTimestamp int64
-	stream *proto.TimeAsk_ConnectToServerClient
+	id         				int
+	LamportTimestamp 		int64
+	stream 					*proto.TimeAsk_ConnectToServerClient
 }
 
 // go run . -name Hannah. Command to connect to server via a chosen name.
@@ -37,14 +37,14 @@ func main() {
 		ClientId: int64(os.Getpid()),
 	})
 	if err != nil {
-		log.Fatalf("connection failed")
+		log.Fatalf("Connection failed")
 	}
 
 	// Create a client
-	client := &Client{
-		id:         1,
-		LamportTimestamp: 0,
-		stream: &stream,
+	client := &Client {
+		id:         		1,
+		LamportTimestamp: 	0,
+		stream: 			&stream,
 	}
 
 	go client.listenForMessages()
@@ -53,15 +53,14 @@ func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		input := scanner.Text()
-		log.Printf("Client asked for time with input: %s\n", input)
+		log.Printf("Client wants to send a message: %s\n", input)
 
-		// Ask the server for the time
-		//_, _ = ignorere variablerne i metoden
+		// Increase the Lamport time and send message to Server
 		client.LamportTimestamp += 1
 		serverConnection.SendMessage(context.Background(), &proto.ClientPublishMessage {
-			ClientId: int64(os.Getpid()),
-			Message: input,
-			LamportTimestamp: client.LamportTimestamp,
+			ClientId: 			int64(os.Getpid()),
+			Message: 			input,
+			LamportTimestamp: 	client.LamportTimestamp,
 		})
 
 		/*timeReturnMessage, err := serverConnection.AskForTime(context.Background(), &proto.AskForTimeMessage{
@@ -90,6 +89,7 @@ func connectToServer() (proto.TimeAskClient, error) {
 func (c *Client) listenForMessages() {
 	//while loop runs forever
 	for {
+		//if the client sent 'quit', this will close the connection
 		msg, err := (*c.stream).Recv()
 		if err == io.EOF {
 			log.Fatalf("Closed connection to server")
@@ -98,14 +98,15 @@ func (c *Client) listenForMessages() {
 			log.Fatalf("There was some error: %v", err)
 		}
 
-		if msg.LamportTimestamp > c.LamportTimestamp{
+
+		if msg.LamportTimestamp > c.LamportTimestamp {
 			c.LamportTimestamp = msg.LamportTimestamp + 1
 		} else {
-			c.LamportTimestamp+=1
+			c.LamportTimestamp += 1
 		}
 		
 
 		//"&v" print as a string
-		log.Printf("Client has received message '%s' at time: %d", msg.StreamMessage, c.LamportTimestamp)
+		log.Printf("Client has received message '%s' at Client Lamport time %d", msg.StreamMessage, c.LamportTimestamp)
 	}
 }
