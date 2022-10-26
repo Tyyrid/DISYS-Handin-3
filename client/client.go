@@ -62,16 +62,6 @@ func main() {
 			Message: 			input,
 			LamportTimestamp: 	client.LamportTimestamp,
 		})
-
-		/*timeReturnMessage, err := serverConnection.AskForTime(context.Background(), &proto.AskForTimeMessage{
-			ClientId: int64(client.id),
-		})
-
-		if err != nil {
-			log.Printf(err.Error())
-		} else {
-			log.Printf("Server %s says the time is %s\n", timeReturnMessage.ServerName, timeReturnMessage.Time)
-		}*/
 	}
 }
 
@@ -105,8 +95,7 @@ func (c *Client) listenForMessages() {
 			c.LamportTimestamp += 1
 		}
 		
-
-		//"&v" print as a string
+		//"%v" print as a string
 		log.Printf("Client has received message '%s' at Client Lamport time %d", msg.StreamMessage, c.LamportTimestamp)
 	}
 }

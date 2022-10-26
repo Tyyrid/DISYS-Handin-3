@@ -6,15 +6,6 @@ package simpleGuide;
 
 option go_package = "grpc/proto";
 
-message AskForTimeMessage {
-  int64 ClientId = 1;
-}
-
-message TimeMessage {
-  string ServerName = 1;
-  string Time = 2;
-}
-
 message ClientPublishMessage {
   int64 ClientId = 1;
   string Message = 2;
@@ -38,7 +29,6 @@ message MessageStreamConnection{
 
 //client pov
 service TimeAsk {
-  /* rpc AskForTime(AskForTimeMessage) returns (TimeMessage); */
   rpc SendMessage(ClientPublishMessage) returns (ServerPublishMessageOk);
   rpc ConnectToServer(ClientConnectMessage) returns (stream MessageStreamConnection);
 }

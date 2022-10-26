@@ -73,14 +73,6 @@ func startServer(server *Server) {
 	}
 }
 
-/*func (c *Server) AskForTime(ctx context.Context, in *proto.AskForTimeMessage) (*proto.TimeMessage, error) {
-	log.Printf("Client with ID %d asked for the time\n", in.ClientId)
-	return &proto.TimeMessage{
-		Time:       time.Now().String(),
-		ServerName: c.name,
-	}, nil
-}*/
-
 func (s *Server) SendMessage(ctx context.Context, msg *proto.ClientPublishMessage) (*proto.ServerPublishMessageOk, error) {
 	//update LamportTime. compare Servers' time and the time for the msg we received
 	if msg.LamportTimestamp > s.LamportTimestamp {
@@ -136,8 +128,7 @@ func (s *Server) SendToAllClients(msg string) {
 func (s *Server) ConnectToServer(msg *proto.ClientConnectMessage, stream proto.TimeAsk_ConnectToServerServer) error {
 	s.LamportTimestamp += 1
 	log.Printf("%s connected to the server at Lamport time %d\n", msg.Name, s.LamportTimestamp)
-	//log.Printf("%s connected to the server", msg.Name)
-
+	
 	clientStream := &ClientStream {
 		name: msg.Name,
 		clientID: int(msg.ClientId),

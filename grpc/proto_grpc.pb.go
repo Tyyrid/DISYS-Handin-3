@@ -22,7 +22,6 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TimeAskClient interface {
-	// rpc AskForTime(AskForTimeMessage) returns (TimeMessage);
 	SendMessage(ctx context.Context, in *ClientPublishMessage, opts ...grpc.CallOption) (*ServerPublishMessageOk, error)
 	ConnectToServer(ctx context.Context, in *ClientConnectMessage, opts ...grpc.CallOption) (TimeAsk_ConnectToServerClient, error)
 }
@@ -80,7 +79,6 @@ func (x *timeAskConnectToServerClient) Recv() (*MessageStreamConnection, error) 
 // All implementations must embed UnimplementedTimeAskServer
 // for forward compatibility
 type TimeAskServer interface {
-	// rpc AskForTime(AskForTimeMessage) returns (TimeMessage);
 	SendMessage(context.Context, *ClientPublishMessage) (*ServerPublishMessageOk, error)
 	ConnectToServer(*ClientConnectMessage, TimeAsk_ConnectToServerServer) error
 	mustEmbedUnimplementedTimeAskServer()
