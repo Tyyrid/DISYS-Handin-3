@@ -9,6 +9,7 @@ import (
 	proto "simpleGuide/grpc"
 	"strconv"
 	"time"
+	"fmt"
 )
 
 type ClientStream struct {
@@ -24,6 +25,7 @@ type Server struct {
 	name                             string
 	port                             int
 	clients                          []*ClientStream
+	LamportTimestamp                 int64
 }
 
 // Used to get the user-defined port for the server from the command line
@@ -38,6 +40,7 @@ func main() {
 		name: "serverName",
 		port: *port,
 		clients: []*ClientStream{},
+		LamportTimestamp: 1,
 	}
 
 	// Start the server
@@ -78,39 +81,55 @@ func startServer(server *Server) {
 	}, nil
 }*/
 
-func (c *Server) SendMessage(ctx context.Context, msg *proto.ClientPublishMessage) (*proto.ServerPublishMessageOk, error) {
-	log.Printf("Received a message '%v'\n", msg)
+func (s *Server) SendMessage(ctx context.Context, msg *proto.ClientPublishMessage) (*proto.ServerPublishMessageOk, error) {
+	log.Printf("Received a message from %d '%v' at time %d\n", msg.ClientId, msg, s.LamportTimestamp)
+
+	//update LamportTime. compare servers time and the time for the msg we received
+	if msg.LamportTimestamp > s.LamportTimestamp{
+		s.LamportTimestamp = msg.LamportTimestamp + 1
+	} else {
+		s.LamportTimestamp+=1
+	}
+
+	log.Printf("This is the updated timestamp: %d", s.LamportTimestamp)
 
 	if msg.Message == "quit" {
-		for i, client := range c.clients {
+		for i, client := range s.clients {
 			if msg.ClientId == int64(client.clientID) {
 				//removes the client who quited - the same as pop. ... means we want to add to our array
-				c.clients = append(c.clients[:i], c.clients[i+1:]...)
+				s.clients = append(s.clients[:i], s.clients[i+1:]...)
 				//sends a message that we want to break the connection to the server
 				client.chQuit <- 0
+				s.SendToAllClients(fmt.Sprintf("%s left at %d", client.name, s.LamportTimestamp))
 				break
 			}
 		}
 	} else {
-		//for each client send them a message
-		for _, client := range c.clients {
-			log.Printf("Sending the message to client %d\n", client.clientID)
-			(*client.stream).Send(&proto.MessageStreamConnection {
-				StreamMessage: msg.Message,
-			})
-		}
+		s.SendToAllClients(msg.Message)
 	}
-
 
 	return &proto.ServerPublishMessageOk{
 		Time:       time.Now().String(),
-		ServerName: c.name,
+		ServerName: s.name,
 	}, nil
 }
 
-func (c *Server) ConnectToServer(msg *proto.ClientConnectMessage, stream proto.TimeAsk_ConnectToServerServer) error {
-	//log.Printf("%s connected to the server at time %d\n", msg.Name, ???) //sæt tiden på
-	log.Printf("%s connected to the server", msg.Name)
+
+func (s *Server) SendToAllClients(msg string) {
+	//for each client send them a message
+	for _, client := range s.clients {
+		log.Printf("Sending the message to client %d\n", client.clientID)
+		(*client.stream).Send(&proto.MessageStreamConnection {
+			StreamMessage: msg,
+			LamportTimestamp: s.LamportTimestamp,
+		})
+	}
+}
+
+func (s *Server) ConnectToServer(msg *proto.ClientConnectMessage, stream proto.TimeAsk_ConnectToServerServer) error {
+	s.LamportTimestamp += 1
+	log.Printf("%s connected to the server at time %d\n", msg.Name, s.LamportTimestamp)
+	//log.Printf("%s connected to the server", msg.Name)
 	clientStream := &ClientStream {
 		name: msg.Name,
 		clientID: int(msg.ClientId),
@@ -119,10 +138,13 @@ func (c *Server) ConnectToServer(msg *proto.ClientConnectMessage, stream proto.T
 	}
 
 	//saves the clients that are connected to the server
-	c.clients = append(c.clients, clientStream)
+	s.clients = append(s.clients, clientStream)
 
-	log.Printf("There are %d clients connected", len(c.clients))
+	s.SendToAllClients(fmt.Sprintf("%s joined at %d", msg.Name, s.LamportTimestamp))
 
+	log.Printf("There are %d clients connected", len(s.clients))
+
+	//as long as there is no message, the channel will stay open
 	<-clientStream.chQuit
 
 	return nil

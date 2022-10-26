@@ -18,6 +18,7 @@ message TimeMessage {
 message ClientPublishMessage {
   int64 ClientId = 1;
   string Message = 2;
+  int64 LamportTimestamp = 3;
 }
 
 message ServerPublishMessageOk {
@@ -32,8 +33,10 @@ message ClientConnectMessage {
 
 message MessageStreamConnection{
   string StreamMessage = 1;
+  int64 LamportTimestamp = 2;
 }
 
+//client pov
 service TimeAsk {
   /* rpc AskForTime(AskForTimeMessage) returns (TimeMessage); */
   rpc SendMessage(ClientPublishMessage) returns (ServerPublishMessageOk);
