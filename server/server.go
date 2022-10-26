@@ -19,7 +19,7 @@ type Server struct {
 }
 
 // Used to get the user-defined port for the server from the command line
-var port = flag.Int("port", 0, "server port number")
+var port = flag.Int("port", 5454, "server port number")
 
 func main() {
 	// Get the port from the command line when the server is run
