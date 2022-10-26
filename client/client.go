@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"bufio"
 	"context"
 	"flag"
@@ -27,22 +28,22 @@ func main() {
 	flag.Parse()
 
 	// Create a client
-	client := &Client{
-		id:         1,
-		portNumber: *clientPort,
-	}
+	//client := &Client{
+	//	id:         1,
+	//	portNumber: *clientPort,
+	//}
 
-	// Wait for the client (user) to ask for the time
-	go waitForTimeRequest(client)
-
-	for {
-
-	}
-}
-
-func waitForTimeRequest(client *Client) {
 	// Connect to the server
 	serverConnection, _ := connectToServer()
+	stream, err := serverConnection.ConnectToServer(context.Background(), &proto.ClientConnectMessage {
+		Name: "Hannah",
+		ClientId: int64(os.Getpid()),
+	})
+	if err != nil {
+		log.Fatalf("connection failed")
+	}
+
+	go listForMessages(stream)
 
 	// Wait for input in the client terminal
 	scanner := bufio.NewScanner(os.Stdin)
@@ -51,7 +52,13 @@ func waitForTimeRequest(client *Client) {
 		log.Printf("Client asked for time with input: %s\n", input)
 
 		// Ask the server for the time
-		timeReturnMessage, err := serverConnection.AskForTime(context.Background(), &proto.AskForTimeMessage{
+		//_, _ = ignorere variablerne i metoden
+		serverConnection.SendMessage(context.Background(), &proto.ClientPublishMessage {
+			ClientId: int64(os.Getpid()),
+			Message: input,
+		})
+
+		/*timeReturnMessage, err := serverConnection.AskForTime(context.Background(), &proto.AskForTimeMessage{
 			ClientId: int64(client.id),
 		})
 
@@ -59,7 +66,7 @@ func waitForTimeRequest(client *Client) {
 			log.Printf(err.Error())
 		} else {
 			log.Printf("Server %s says the time is %s\n", timeReturnMessage.ServerName, timeReturnMessage.Time)
-		}
+		}*/
 	}
 }
 
@@ -72,4 +79,19 @@ func connectToServer() (proto.TimeAskClient, error) {
 		log.Printf("Connected to the server at port %d\n", *serverPort)
 	}
 	return proto.NewTimeAskClient(conn), nil
+}
+
+func listForMessages(stream proto.TimeAsk_ConnectToServerClient) {
+	//while loop runs forever
+	for {
+		msg, err := stream.Recv()
+		if err == io.EOF {
+			log.Fatalf("Closed connection to server")
+		}
+		if err != nil {
+			log.Fatalf("There was some error: %v", err)
+		}
+		//print as a string
+		log.Printf("%v", msg)
+	}
 }
